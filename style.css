@@ -1,0 +1,100 @@
+body {
+  margin: 0;
+  font-family: 'Comfortaa', sans-serif;
+  background: #f0f8f4;
+  color: #2d4032;
+  transition: background 0.3s, color 0.3s;
+}
+
+body.dark {
+  background: #1e1e1e;
+  color: #e0e0e0;
+}
+
+.container {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+h1 {
+  font-size: 2em;
+  margin-bottom: 20px;
+}
+
+#soundboard {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+}
+
+.sound {
+  background: #ffffff;
+  border: 2px solid #a4d4a4;
+  border-radius: 16px;
+  padding: 20px;
+  width: 220px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  transition: background 0.3s, border 0.3s;
+}
+
+body.dark .sound {
+  background: #2a2a2a;
+  border: 2px solid #444;
+}
+
+.sound h2 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.controls {
+  margin-top: 10px;
+}
+
+button {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 5px;
+  transition: background 0.3s;
+}
+
+button:hover {
+  background: #388e3c;
+}
+
+input[type=range] {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.controls-global {
+  margin-bottom: 30px;
+}
+
+.footer {
+  margin-top: 40px;
+  font-size: 0.9em;
+  color: #555;
+}
+ul#recordingsList {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+ul#recordingsList li {
+  margin: 10px 0;
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+ul#recordingsList li audio {
+  width: 100%;
+}
