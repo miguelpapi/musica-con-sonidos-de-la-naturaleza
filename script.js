@@ -96,7 +96,13 @@ document.getElementById("startRecording").onclick = async () => {
     // Creamos un destino para grabar
     const dest = audioContext.createMediaStreamDestination();
 
-    // Conectamos los sourceNodes al destino de grabación
+    // Desconectamos primero los sourceNodes del destino (por si ya estaban conectados)
+    audioSourceNodes.forEach(sourceNode => {
+      try { sourceNode.disconnect(dest); } catch (e) {}
+      sourceNode.connect(audioContext.destination); // Siempre conectado a la salida normal
+    });
+
+    // Ahora conectamos los sourceNodes al destino de grabación
     audioSourceNodes.forEach(sourceNode => {
       sourceNode.connect(dest);
     });
@@ -138,6 +144,11 @@ document.getElementById("startRecording").onclick = async () => {
 
       // Desconectamos el micrófono del destino para evitar duplicados en la siguiente grabación
       micSource.disconnect(dest);
+
+      // Desconectamos los sourceNodes del destino para evitar duplicados en la siguiente grabación
+      audioSourceNodes.forEach(sourceNode => {
+        try { sourceNode.disconnect(dest); } catch (e) {}
+      });
     };
 
     mediaRecorder.start();
