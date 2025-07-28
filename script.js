@@ -98,8 +98,8 @@ document.getElementById("startRecording").onclick = async () => {
 
     // Conectamos los sourceNodes al destino de grabación (además de destino principal)
     audioSourceNodes.forEach(sourceNode => {
-      try { sourceNode.disconnect(dest); } catch (e) {}
-      sourceNode.connect(dest);
+      // Solo conecta si no está ya conectado a dest
+      try { sourceNode.connect(dest); } catch (e) {}
     });
 
     // Obtenemos el micrófono y lo conectamos al destino
@@ -136,12 +136,8 @@ document.getElementById("startRecording").onclick = async () => {
       document.getElementById("recordingsList").appendChild(li);
 
       recordedChunks = [];
-
-      // Desconectamos los sourceNodes SOLO del destino de grabación (no del destino principal)
-      audioSourceNodes.forEach(sourceNode => {
-        try { sourceNode.disconnect(dest); } catch (e) {}
-      });
-      // No es necesario desconectar micSource, se destruye solo
+      // No desconectes los sourceNode de audioContext.destination ni de dest
+      // El micSource se destruye solo
     };
 
     mediaRecorder.start();
