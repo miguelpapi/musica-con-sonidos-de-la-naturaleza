@@ -10,6 +10,10 @@ const soundboard = document.getElementById("soundboard");
 const audioElements = [];
 const playButtons = [];
 
+// Creamos el contexto de audio y los sourceNodes UNA SOLA VEZ
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+const audioSourceNodes = [];
+
 sounds.forEach((sound, index) => {
   const container = document.createElement("div");
   container.className = "sound";
@@ -56,6 +60,13 @@ sounds.forEach((sound, index) => {
   soundboard.appendChild(container);
 
   audioElements.push(audio);
+
+  // Creamos el sourceNode solo una vez por audio
+  const sourceNode = audioContext.createMediaElementSource(audio);
+  audioSourceNodes.push(sourceNode);
+  // Conectamos a la salida normal para que se escuche siempre
+  sourceNode.connect(audioContext.destination);
+
   playButtons.push(playBtn);
 });
 
@@ -82,29 +93,21 @@ let recordedChunks = [];
 
 document.getElementById("startRecording").onclick = async () => {
   try {
-    // Crear contexto de audio
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-    // Crear destino para grabar
+    // Creamos un destino para grabar
     const dest = audioContext.createMediaStreamDestination();
 
-    // Conectar todos los sonidos al destino
-    audioElements.forEach(audio => {
-      const source = audioContext.createMediaElementSource(audio);
-      source.connect(dest);
-      source.connect(audioContext.destination); // Para que siga sonando en los parlantes
+    // Conectamos los sourceNodes al destino de grabación
+    audioSourceNodes.forEach(sourceNode => {
+      sourceNode.connect(dest);
     });
 
-    // Obtener el micrófono
+    // Obtenemos el micrófono y lo conectamos al destino
     const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const micSource = audioContext.createMediaStreamSource(audioContext.createMediaStreamDestination().stream);
+    const micSource = audioContext.createMediaStreamSource(micStream);
+    micSource.connect(dest);
 
-    // Mezclar micrófono y sonidos
-    const combinedStream = new MediaStream([
-      ...dest.stream.getAudioTracks(),
-      ...micStream.getAudioTracks()
-    ]);
-
+    // Creamos el MediaRecorder con el stream combinado
+    const combinedStream = dest.stream;
     mediaRecorder = new MediaRecorder(combinedStream);
 
     mediaRecorder.ondataavailable = e => {
@@ -132,6 +135,9 @@ document.getElementById("startRecording").onclick = async () => {
       document.getElementById("recordingsList").appendChild(li);
 
       recordedChunks = [];
+
+      // Desconectamos el micrófono del destino para evitar duplicados en la siguiente grabación
+      micSource.disconnect(dest);
     };
 
     mediaRecorder.start();
