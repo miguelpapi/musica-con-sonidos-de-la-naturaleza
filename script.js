@@ -82,8 +82,30 @@ let recordedChunks = [];
 
 document.getElementById("startRecording").onclick = async () => {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
+    // Crear contexto de audio
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Crear destino para grabar
+    const dest = audioContext.createMediaStreamDestination();
+
+    // Conectar todos los sonidos al destino
+    audioElements.forEach(audio => {
+      const source = audioContext.createMediaElementSource(audio);
+      source.connect(dest);
+      source.connect(audioContext.destination); // Para que siga sonando en los parlantes
+    });
+
+    // Obtener el micrófono
+    const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const micSource = audioContext.createMediaStreamSource(audioContext.createMediaStreamDestination().stream);
+
+    // Mezclar micrófono y sonidos
+    const combinedStream = new MediaStream([
+      ...dest.stream.getAudioTracks(),
+      ...micStream.getAudioTracks()
+    ]);
+
+    mediaRecorder = new MediaRecorder(combinedStream);
 
     mediaRecorder.ondataavailable = e => {
       if (e.data.size > 0) recordedChunks.push(e.data);
