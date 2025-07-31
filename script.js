@@ -10,10 +10,19 @@ const soundboard = document.getElementById("soundboard");
 const audioElements = [];
 const playButtons = [];
 
-// Creamos el contexto de audio y los sourceNodes UNA SOLA VEZ
+// Contexto de audio
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 const audioSourceNodes = [];
 
+// ✅ Desbloquear audio al primer clic
+document.body.addEventListener("click", () => {
+  if (audioContext.state === "suspended") {
+    audioContext.resume();
+    console.log("AudioContext desbloqueado");
+  }
+});
+
+// Crear botones y sonidos
 sounds.forEach((sound, index) => {
   const container = document.createElement("div");
   container.className = "sound";
@@ -30,7 +39,7 @@ sounds.forEach((sound, index) => {
 
   playBtn.onclick = () => {
     if (audio.paused) {
-      audio.play();
+      audio.play().catch(err => console.error("Error al reproducir:", err));
       playBtn.textContent = "Pausar";
     } else {
       audio.pause();
@@ -61,10 +70,8 @@ sounds.forEach((sound, index) => {
 
   audioElements.push(audio);
 
-  // Creamos el sourceNode solo una vez por audio
   const sourceNode = audioContext.createMediaElementSource(audio);
   audioSourceNodes.push(sourceNode);
-  // Conectamos a la salida normal para que se escuche siempre
   sourceNode.connect(audioContext.destination);
 
   playButtons.push(playBtn);
@@ -76,7 +83,6 @@ document.getElementById("stopAll").onclick = () => {
     audio.pause();
     audio.currentTime = 0;
   });
-
   playButtons.forEach(btn => {
     btn.textContent = "Reproducir";
   });
@@ -87,32 +93,33 @@ document.getElementById("toggleTheme").onclick = () => {
   document.body.classList.toggle("dark");
 };
 
-// Grabacion
+// Grabación
 let mediaRecorder;
 let recordedChunks = [];
 
 document.getElementById("startRecording").onclick = async () => {
   try {
-    // Creamos un destino para grabar
     const dest = audioContext.createMediaStreamDestination();
 
-    // Conectamos los sourceNodes al destino de grabación (además de destino principal)
+    // Conectar sonidos al destino de grabación
     audioSourceNodes.forEach(sourceNode => {
-      // Solo conecta si no está ya conectado a dest
       try { sourceNode.connect(dest); } catch (e) {}
     });
 
-    // Obtenemos el micrófono y lo conectamos al destino
+    // Obtener micrófono
     const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const micSource = audioContext.createMediaStreamSource(micStream);
     micSource.connect(dest);
 
-    // Creamos el MediaRecorder con el stream combinado
+    // Crear MediaRecorder
     const combinedStream = dest.stream;
     mediaRecorder = new MediaRecorder(combinedStream);
 
     mediaRecorder.ondataavailable = e => {
-      if (e.data.size > 0) recordedChunks.push(e.data);
+      if (e.data.size > 0) {
+        recordedChunks.push(e.data);
+        console.log("Chunk grabado:", e.data.size);
+      }
     };
 
     mediaRecorder.onstop = () => {
@@ -136,20 +143,23 @@ document.getElementById("startRecording").onclick = async () => {
       document.getElementById("recordingsList").appendChild(li);
 
       recordedChunks = [];
-      // No desconectes los sourceNode de audioContext.destination ni de dest
-      // El micSource se destruye solo
     };
 
     mediaRecorder.start();
+    console.log("Grabación iniciada...");
     document.getElementById("startRecording").disabled = true;
     document.getElementById("stopRecording").disabled = false;
   } catch (err) {
-    alert("Error al acceder al microfono: " + err.message);
+    alert("Error al acceder al micrófono: " + err.message);
+    console.error(err);
   }
 };
 
 document.getElementById("stopRecording").onclick = () => {
-  mediaRecorder.stop();
-  document.getElementById("startRecording").disabled = false;
-  document.getElementById("stopRecording").disabled = true;
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+    console.log("Grabación detenida.");
+    document.getElementById("startRecording").disabled = false;
+    document.getElementById("stopRecording").disabled = true;
+  }
 };
